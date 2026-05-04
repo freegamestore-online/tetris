@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 
 interface ShellProps {
   children: ReactNode;
+  sidebar?: ReactNode;
 }
 
-export function Shell({ children }: ShellProps) {
+export function Shell({ children, sidebar }: ShellProps) {
   return (
     <>
       {/* Desktop: sidebar + main */}
@@ -20,9 +21,7 @@ export function Shell({ children }: ShellProps) {
           <div className="p-6 font-bold text-lg" style={{ fontFamily: "Fraunces, serif" }}>
             tetris
           </div>
-          <nav className="flex-1 px-4">
-            {/* Add nav items here */}
-          </nav>
+          {sidebar ?? <nav className="flex-1 px-4" />}
           <div className="p-4 text-xs" style={{ color: "var(--muted)" }}>
             <a
               href="https://freegamestore.online"
@@ -48,16 +47,7 @@ export function Shell({ children }: ShellProps) {
             tetris
           </span>
         </header>
-        <main className="flex-1 overflow-auto p-4">{children}</main>
-        <nav
-          className="flex items-center justify-around h-16 border-t shrink-0"
-          style={{
-            borderColor: "var(--line)",
-            background: "var(--dock)",
-          }}
-        >
-          {/* Add dock items here */}
-        </nav>
+        <main className="flex-1 overflow-auto">{children}</main>
       </div>
     </>
   );

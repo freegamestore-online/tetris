@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Shell } from './components/Shell'
+import { Leaderboard } from './components/Leaderboard'
+import { useLeaderboard } from './hooks/useLeaderboard'
 
 const COLS = 10
 const ROWS = 20
@@ -84,6 +86,8 @@ export default function App() {
   const [state, setState] = useState<GameState>(initState)
   const stateRef = useRef(state)
   stateRef.current = state
+  const { topScores, recentScores, submitScore, loading } = useLeaderboard("tetris")
+  const submittedRef = useRef(false)
 
   const spawnPiece = useCallback((board: Board): Partial<GameState> | null => {
     const p = randomPiece()
@@ -144,6 +148,17 @@ export default function App() {
     })
   }, [spawnPiece])
 
+  // Submit score on game over
+  useEffect(() => {
+    if (state.gameOver && !submittedRef.current) {
+      submittedRef.current = true
+      submitScore(state.score)
+    }
+    if (!state.gameOver) {
+      submittedRef.current = false
+    }
+  }, [state.gameOver, state.score, submitScore])
+
   // Game loop
   useEffect(() => {
     if (state.gameOver || state.paused) return
@@ -177,8 +192,18 @@ export default function App() {
         display[state.pos.row + r]![state.pos.col + c] = state.piece.color
 
   return (
-    <Shell>
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4">
+    <Shell
+      sidebar={
+        <nav className="flex-1 px-4 flex flex-col gap-3 py-4 overflow-auto">
+          <div className="mt-2 border-t" style={{ borderColor: "var(--line)" }}>
+            <div className="text-xs font-semibold px-4 pt-3" style={{ color: "var(--muted)" }}>Leaderboard</div>
+            <Leaderboard topScores={topScores} recentScores={recentScores} loading={loading} />
+          </div>
+        </nav>
+      }
+    >
+      {/* Desktop layout */}
+      <div className="hidden sm:flex flex-1 flex-col items-center justify-center gap-4 p-4">
         <div className="flex gap-6 text-center">
           <div>
             <div className="text-[0.65rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Score</div>
@@ -196,7 +221,7 @@ export default function App() {
 
         <div
           className="rounded-xl overflow-hidden"
-          style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, border: '2px solid var(--line)', background: 'var(--panel)', width: 'min(16rem, calc(100vw - 3rem))', aspectRatio: `${COLS}/${ROWS}` }}
+          style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, border: '2px solid var(--line)', background: 'var(--panel)', width: '16rem', aspectRatio: `${COLS}/${ROWS}` }}
         >
           {display.flat().map((cell, i) => (
             <div key={i} style={{ aspectRatio: '1', background: cell || 'transparent', border: cell ? '1px solid rgba(255,255,255,0.15)' : '1px solid var(--line)', borderRadius: cell ? '2px' : '0' }} />
@@ -210,22 +235,111 @@ export default function App() {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <div className="flex gap-2 sm:hidden">
-              <button onClick={() => move(-1)} className="rounded-xl px-4 py-3 font-bold" style={{ background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)' }}>&#9664;</button>
-              <button onClick={rotatePiece} className="rounded-xl px-4 py-3 font-bold" style={{ background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)' }}>&#8635;</button>
-              <button onClick={tick} className="rounded-xl px-4 py-3 font-bold" style={{ background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)' }}>&#9660;</button>
-              <button onClick={() => move(1)} className="rounded-xl px-4 py-3 font-bold" style={{ background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)' }}>&#9654;</button>
-              <button onClick={hardDrop} className="rounded-xl px-5 py-3 font-bold text-white" style={{ background: 'var(--accent)' }}>&#9196;</button>
-            </div>
-            <div className="text-[0.7rem] hidden sm:block" style={{ color: 'var(--muted)' }}>
+            <div className="text-[0.7rem]" style={{ color: 'var(--muted)' }}>
               Arrow keys &middot; Space to drop &middot; P to pause
             </div>
-            <button onClick={() => setState(s => ({ ...s, paused: !s.paused }))} className="sm:hidden rounded-lg px-3 py-1 text-xs" style={{ background: 'var(--panel)', border: '1px solid var(--line)', color: 'var(--muted)' }}>
-              {state.paused ? 'Resume' : 'Pause'}
-            </button>
           </div>
         )}
         {state.paused && !state.gameOver && <div className="display-font text-lg font-bold" style={{ color: 'var(--muted)' }}>Paused</div>}
+      </div>
+
+      {/* Mobile layout */}
+      <div className="flex sm:hidden flex-col flex-1" style={{ height: 'calc(100vh - 3.5rem)' }}>
+        {/* Score bar */}
+        <div className="flex justify-center gap-4 py-2 text-center shrink-0">
+          <div>
+            <div className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Score</div>
+            <div className="display-font text-lg font-bold" style={{ color: 'var(--ink)' }}>{state.score}</div>
+          </div>
+          <div>
+            <div className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Lines</div>
+            <div className="display-font text-lg font-bold" style={{ color: 'var(--ink)' }}>{state.lines}</div>
+          </div>
+          <div>
+            <div className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Level</div>
+            <div className="display-font text-lg font-bold" style={{ color: 'var(--ink)' }}>{Math.floor(state.lines / 10) + 1}</div>
+          </div>
+        </div>
+
+        {/* Game area: left controls + board + right controls */}
+        <div className="flex flex-1 items-center justify-center gap-2 px-2 pb-2 min-h-0">
+          {/* Left side: D-pad */}
+          {!state.gameOver && (
+            <div className="flex flex-col items-center gap-1 shrink-0">
+              <button
+                onClick={rotatePiece}
+                className="rounded-xl font-bold flex items-center justify-center"
+                style={{ width: 48, height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
+              >&#8593;</button>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => move(-1)}
+                  className="rounded-xl font-bold flex items-center justify-center"
+                  style={{ width: 48, height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
+                >&#8592;</button>
+                <button
+                  onClick={() => move(1)}
+                  className="rounded-xl font-bold flex items-center justify-center"
+                  style={{ width: 48, height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
+                >&#8594;</button>
+              </div>
+              <button
+                onClick={tick}
+                className="rounded-xl font-bold flex items-center justify-center"
+                style={{ width: 48, height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
+              >&#8595;</button>
+            </div>
+          )}
+
+          {/* Board */}
+          <div
+            className="rounded-xl overflow-hidden shrink-0"
+            style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, border: '2px solid var(--line)', background: 'var(--panel)', height: '100%', maxHeight: '100%', aspectRatio: `${COLS}/${ROWS}` }}
+          >
+            {display.flat().map((cell, i) => (
+              <div key={i} style={{ aspectRatio: '1', background: cell || 'transparent', border: cell ? '1px solid rgba(255,255,255,0.15)' : '1px solid var(--line)', borderRadius: cell ? '2px' : '0' }} />
+            ))}
+          </div>
+
+          {/* Right side: Rotate + Drop */}
+          {!state.gameOver ? (
+            <div className="flex flex-col items-center gap-2 shrink-0">
+              <button
+                onClick={rotatePiece}
+                className="rounded-xl font-bold flex items-center justify-center"
+                style={{ width: 48, height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.3rem' }}
+              >&#8635;</button>
+              <button
+                onClick={hardDrop}
+                className="rounded-xl font-bold flex items-center justify-center text-white"
+                style={{ width: 48, height: 48, background: 'var(--accent)', fontSize: '1.3rem' }}
+              >&#9196;</button>
+              <button
+                onClick={() => setState(s => ({ ...s, paused: !s.paused }))}
+                className="rounded-lg px-2 py-1 text-[0.6rem]"
+                style={{ background: 'var(--panel)', border: '1px solid var(--line)', color: 'var(--muted)' }}
+              >
+                {state.paused ? 'Resume' : 'Pause'}
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 shrink-0" style={{ width: 48 }}>
+              {/* Placeholder to keep board centered */}
+            </div>
+          )}
+        </div>
+
+        {/* Game over overlay for mobile */}
+        {state.gameOver && (
+          <div className="flex flex-col items-center gap-3 py-3 shrink-0">
+            <div className="display-font text-xl font-bold" style={{ color: 'var(--error, #ef4444)' }}>Game Over</div>
+            <button onClick={() => setState(initState)} className="rounded-xl px-6 py-2.5 font-semibold text-white" style={{ background: 'var(--accent)' }}>Play Again</button>
+          </div>
+        )}
+
+        {state.paused && !state.gameOver && (
+          <div className="text-center py-2 display-font text-lg font-bold" style={{ color: 'var(--muted)' }}>Paused</div>
+        )}
       </div>
     </Shell>
   )
