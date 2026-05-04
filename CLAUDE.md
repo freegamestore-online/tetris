@@ -1,10 +1,10 @@
-# APPNAME
+# tetris
 
 ## Platform: FreeAppStore
 - Hosted on Cloudflare Pages (static SPA only)
 - ONE environment only (production). No dev/staging. Fix forward, no rollbacks.
 - Push to `main` auto-deploys to production via CF Pages
-- Domain: APPNAME.freeappstore.online
+- Domain: tetris.freeappstore.online
 
 ## Tech Stack
 - TypeScript, React 19, Vite 6, Tailwind CSS 4.1, pnpm
