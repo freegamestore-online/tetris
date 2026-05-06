@@ -37,8 +37,14 @@ export function Shell({ children, sidebar }: ShellProps) {
         <main className="flex-1 overflow-auto p-8">{children}</main>
       </div>
 
-      {/* Mobile: header + main + dock */}
-      <div className="flex flex-col h-screen md:hidden">
+      {/* Mobile: header + main + dock.
+          h-screen (= 100vh) overflows the visible viewport on iOS Safari
+          when the URL bar is shown — 100vh is the LARGE viewport (URL
+          bar hidden), so on initial load the page is taller than what
+          you can see, and the body becomes scrollable. 100dvh tracks
+          the actual visible area as the URL bar shows/hides.
+          overflow-hidden on main blocks rubber-band scroll inside. */}
+      <div className="flex flex-col md:hidden" style={{ height: '100dvh' }}>
         <header
           className="flex items-center px-4 h-14 border-b shrink-0"
           style={{ borderColor: "var(--line)", background: "var(--panel)" }}
@@ -47,7 +53,7 @@ export function Shell({ children, sidebar }: ShellProps) {
             tetris
           </span>
         </header>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-hidden">{children}</main>
       </div>
     </>
   );

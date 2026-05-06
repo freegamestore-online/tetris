@@ -262,7 +262,11 @@ export default function App() {
           left+board+right layout cropped controls at the viewport
           edges because the board (height-constrained, aspect 10:20)
           plus 2×48px controls didn't fit under ~380px wide. */}
-      <div className="flex sm:hidden flex-col flex-1 min-h-0" style={{ height: 'calc(100svh - 3.5rem)' }}>
+      {/* Fill the <main> set up by Shell — Shell is now 100dvh and
+          <main> is flex-1 with overflow-hidden, so this just claims
+          100% of the available height without re-computing viewport
+          math (which fights with iOS Safari's URL-bar transitions). */}
+      <div className="flex sm:hidden flex-col h-full min-h-0">
         {/* Score bar */}
         <div className="flex justify-center gap-4 py-1 text-center shrink-0">
           <div>
