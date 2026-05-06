@@ -221,10 +221,25 @@ export default function App() {
 
         <div
           className="rounded-xl overflow-hidden"
-          style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, border: '2px solid var(--line)', background: 'var(--panel)', width: '16rem', aspectRatio: `${COLS}/${ROWS}` }}
+          style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, gridTemplateRows: `repeat(${ROWS}, 1fr)`, border: '2px solid var(--line)', background: 'var(--panel)', width: '16rem', aspectRatio: `${COLS}/${ROWS}` }}
         >
           {display.flat().map((cell, i) => (
-            <div key={i} style={{ aspectRatio: '1', background: cell || 'transparent', border: cell ? '1px solid rgba(255,255,255,0.15)' : '1px solid var(--line)', borderRadius: cell ? '2px' : '0' }} />
+            <div
+              key={i}
+              style={{
+                background: cell || 'transparent',
+                // box-shadow: inset gives a visible "border" without
+                // taking layout space, so 10 cells with 1fr each fit
+                // exactly without 1-2px overflow per cell summing up
+                // to 10-20px and breaking the grid on small viewports.
+                boxShadow: cell
+                  ? 'inset 0 0 0 1px rgba(255,255,255,0.15)'
+                  : 'inset 0 0 0 1px var(--line)',
+                borderRadius: cell ? '2px' : '0',
+                minWidth: 0,
+                minHeight: 0,
+              }}
+            />
           ))}
         </div>
 
@@ -243,91 +258,111 @@ export default function App() {
         {state.paused && !state.gameOver && <div className="display-font text-lg font-bold" style={{ color: 'var(--muted)' }}>Paused</div>}
       </div>
 
-      {/* Mobile layout */}
-      <div className="flex sm:hidden flex-col flex-1" style={{ height: 'calc(100vh - 3.5rem)' }}>
+      {/* Mobile layout: stacked, controls below the board. Earlier
+          left+board+right layout cropped controls at the viewport
+          edges because the board (height-constrained, aspect 10:20)
+          plus 2×48px controls didn't fit under ~380px wide. */}
+      <div className="flex sm:hidden flex-col flex-1 min-h-0" style={{ height: 'calc(100svh - 3.5rem)' }}>
         {/* Score bar */}
-        <div className="flex justify-center gap-4 py-2 text-center shrink-0">
+        <div className="flex justify-center gap-4 py-1 text-center shrink-0">
           <div>
             <div className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Score</div>
-            <div className="display-font text-lg font-bold" style={{ color: 'var(--ink)' }}>{state.score}</div>
+            <div className="display-font text-base font-bold" style={{ color: 'var(--ink)' }}>{state.score}</div>
           </div>
           <div>
             <div className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Lines</div>
-            <div className="display-font text-lg font-bold" style={{ color: 'var(--ink)' }}>{state.lines}</div>
+            <div className="display-font text-base font-bold" style={{ color: 'var(--ink)' }}>{state.lines}</div>
           </div>
           <div>
             <div className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Level</div>
-            <div className="display-font text-lg font-bold" style={{ color: 'var(--ink)' }}>{Math.floor(state.lines / 10) + 1}</div>
+            <div className="display-font text-base font-bold" style={{ color: 'var(--ink)' }}>{Math.floor(state.lines / 10) + 1}</div>
           </div>
         </div>
 
-        {/* Game area: left controls + board + right controls */}
-        <div className="flex flex-1 items-center justify-center gap-2 px-2 pb-2 min-h-0">
-          {/* Left side: D-pad */}
-          {!state.gameOver && (
-            <div className="flex flex-col items-center gap-1 shrink-0">
-              <button
-                onClick={rotatePiece}
-                className="rounded-xl font-bold flex items-center justify-center"
-                style={{ width: 48, height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
-              >&#8593;</button>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => move(-1)}
-                  className="rounded-xl font-bold flex items-center justify-center"
-                  style={{ width: 48, height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
-                >&#8592;</button>
-                <button
-                  onClick={() => move(1)}
-                  className="rounded-xl font-bold flex items-center justify-center"
-                  style={{ width: 48, height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
-                >&#8594;</button>
-              </div>
-              <button
-                onClick={tick}
-                className="rounded-xl font-bold flex items-center justify-center"
-                style={{ width: 48, height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
-              >&#8595;</button>
-            </div>
-          )}
-
-          {/* Board */}
+        {/* Board area — fills available vertical space, constrained
+            to viewport width via maxWidth: 100%. */}
+        <div className="flex flex-1 items-center justify-center px-2 min-h-0">
           <div
-            className="rounded-xl overflow-hidden shrink-0"
-            style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, border: '2px solid var(--line)', background: 'var(--panel)', height: '100%', maxHeight: '100%', aspectRatio: `${COLS}/${ROWS}` }}
+            className="rounded-xl overflow-hidden"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${COLS}, 1fr)`,
+              gridTemplateRows: `repeat(${ROWS}, 1fr)`,
+              border: '2px solid var(--line)',
+              background: 'var(--panel)',
+              // Anchor on height so the board fills available
+              // vertical space; clamp width via max-width so narrow
+              // viewports (board.height/2 > viewport.width) shrink
+              // both dimensions proportionally instead of overflowing.
+              height: '100%',
+              maxWidth: '100%',
+              aspectRatio: `${COLS}/${ROWS}`,
+            }}
           >
             {display.flat().map((cell, i) => (
-              <div key={i} style={{ aspectRatio: '1', background: cell || 'transparent', border: cell ? '1px solid rgba(255,255,255,0.15)' : '1px solid var(--line)', borderRadius: cell ? '2px' : '0' }} />
+              <div
+                key={i}
+                style={{
+                  background: cell || 'transparent',
+                  boxShadow: cell
+                    ? 'inset 0 0 0 1px rgba(255,255,255,0.15)'
+                    : 'inset 0 0 0 1px var(--line)',
+                  borderRadius: cell ? '2px' : '0',
+                  minWidth: 0,
+                  minHeight: 0,
+                }}
+              />
             ))}
           </div>
-
-          {/* Right side: Rotate + Drop */}
-          {!state.gameOver ? (
-            <div className="flex flex-col items-center gap-2 shrink-0">
-              <button
-                onClick={rotatePiece}
-                className="rounded-xl font-bold flex items-center justify-center"
-                style={{ width: 48, height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.3rem' }}
-              >&#8635;</button>
-              <button
-                onClick={hardDrop}
-                className="rounded-xl font-bold flex items-center justify-center text-white"
-                style={{ width: 48, height: 48, background: 'var(--accent)', fontSize: '1.3rem' }}
-              >&#9196;</button>
-              <button
-                onClick={() => setState(s => ({ ...s, paused: !s.paused }))}
-                className="rounded-lg px-2 py-1 text-[0.6rem]"
-                style={{ background: 'var(--panel)', border: '1px solid var(--line)', color: 'var(--muted)' }}
-              >
-                {state.paused ? 'Resume' : 'Pause'}
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2 shrink-0" style={{ width: 48 }}>
-              {/* Placeholder to keep board centered */}
-            </div>
-          )}
         </div>
+
+        {/* Controls below the board: 5-column grid fits all on one row
+            even at 320px (5×48 = 240 + gaps). */}
+        {!state.gameOver && (
+          <div className="grid grid-cols-5 gap-1 px-2 pb-1 pt-1 shrink-0">
+            <button
+              onClick={() => move(-1)}
+              className="rounded-xl font-bold flex items-center justify-center"
+              style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
+              aria-label="Left"
+            >&#8592;</button>
+            <button
+              onClick={rotatePiece}
+              className="rounded-xl font-bold flex items-center justify-center"
+              style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.3rem' }}
+              aria-label="Rotate"
+            >&#8635;</button>
+            <button
+              onClick={tick}
+              className="rounded-xl font-bold flex items-center justify-center"
+              style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
+              aria-label="Down"
+            >&#8595;</button>
+            <button
+              onClick={() => move(1)}
+              className="rounded-xl font-bold flex items-center justify-center"
+              style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
+              aria-label="Right"
+            >&#8594;</button>
+            <button
+              onClick={hardDrop}
+              className="rounded-xl font-bold flex items-center justify-center text-white"
+              style={{ height: 48, background: 'var(--accent)', fontSize: '1.3rem' }}
+              aria-label="Drop"
+            >&#9196;</button>
+          </div>
+        )}
+        {!state.gameOver && (
+          <div className="flex justify-center pb-2 shrink-0">
+            <button
+              onClick={() => setState(s => ({ ...s, paused: !s.paused }))}
+              className="rounded-lg px-3 py-1 text-[0.65rem]"
+              style={{ background: 'var(--panel)', border: '1px solid var(--line)', color: 'var(--muted)' }}
+            >
+              {state.paused ? 'Resume' : 'Pause'}
+            </button>
+          </div>
+        )}
 
         {/* Game over overlay for mobile */}
         {state.gameOver && (
