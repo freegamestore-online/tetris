@@ -200,6 +200,32 @@ export default function App() {
             { label: 'Lines', value: state.lines },
             { label: 'Level', value: Math.floor(state.lines / 10) + 1 },
           ]}
+          rules={
+            <div>
+              <h3 style={{marginBottom:'0.5rem',fontWeight:700}}>Tetris</h3>
+              <p>Stack falling blocks and clear complete lines.</p>
+              <h4 style={{marginTop:'0.75rem',fontWeight:600}}>Controls</h4>
+              <ul style={{paddingLeft:'1.2rem',marginTop:'0.25rem'}}>
+                <li>Left/Right arrows to move</li>
+                <li>Up arrow to rotate</li>
+                <li>Down arrow to soft drop</li>
+                <li>Space to hard drop</li>
+                <li>P to pause</li>
+              </ul>
+              <h4 style={{marginTop:'0.75rem',fontWeight:600}}>Scoring</h4>
+              <ul style={{paddingLeft:'1.2rem',marginTop:'0.25rem'}}>
+                <li>1 line = 100 pts</li>
+                <li>2 lines = 300 pts</li>
+                <li>3 lines = 500 pts</li>
+                <li>4 lines = 800 pts</li>
+              </ul>
+              <h4 style={{marginTop:'0.75rem',fontWeight:600}}>Rules</h4>
+              <ul style={{paddingLeft:'1.2rem',marginTop:'0.25rem'}}>
+                <li>Level increases every 10 lines</li>
+                <li>Higher levels = faster drops</li>
+              </ul>
+            </div>
+          }
           actions={
             <>
               {!state.gameOver && (
