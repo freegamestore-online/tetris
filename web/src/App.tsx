@@ -231,7 +231,7 @@ export default function App() {
               {!state.gameOver && (
                 <button
                   onClick={() => setState(s => ({ ...s, paused: !s.paused }))}
-                  className="rounded-lg px-3 py-1 text-xs"
+                  className="rounded-lg px-3 py-1 text-xs min-h-[2.75rem] min-w-[2.75rem]"
                   style={{ background: 'var(--panel)', border: '1px solid var(--line)', color: 'var(--muted)' }}
                 >
                   {state.paused ? 'Resume' : 'Pause'}
@@ -268,7 +268,7 @@ export default function App() {
         {state.gameOver ? (
           <div className="text-center">
             <div className="display-font text-xl font-bold mb-3" style={{ color: 'var(--error, #ef4444)' }}>Game Over</div>
-            <button onClick={() => setState(initState)} className="rounded-xl px-6 py-2.5 font-semibold text-white" style={{ background: 'var(--accent)' }}>Play Again</button>
+            <button onClick={() => setState(initState)} className="rounded-xl px-6 py-2.5 font-semibold text-white min-h-[2.75rem]" style={{ background: 'var(--accent)' }}>Play Again</button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
@@ -319,31 +319,31 @@ export default function App() {
           <div className="grid grid-cols-5 gap-1 px-2 pb-1 pt-1 shrink-0">
             <button
               onClick={() => move(-1)}
-              className="rounded-xl font-bold flex items-center justify-center"
+              className="rounded-xl font-bold flex items-center justify-center min-h-[2.75rem]"
               style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
               aria-label="Left"
             >&#8592;</button>
             <button
               onClick={rotatePiece}
-              className="rounded-xl font-bold flex items-center justify-center"
+              className="rounded-xl font-bold flex items-center justify-center min-h-[2.75rem]"
               style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.3rem' }}
               aria-label="Rotate"
             >&#8635;</button>
             <button
               onClick={tick}
-              className="rounded-xl font-bold flex items-center justify-center"
+              className="rounded-xl font-bold flex items-center justify-center min-h-[2.75rem]"
               style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
               aria-label="Down"
             >&#8595;</button>
             <button
               onClick={() => move(1)}
-              className="rounded-xl font-bold flex items-center justify-center"
+              className="rounded-xl font-bold flex items-center justify-center min-h-[2.75rem]"
               style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
               aria-label="Right"
             >&#8594;</button>
             <button
               onClick={hardDrop}
-              className="rounded-xl font-bold flex items-center justify-center text-white"
+              className="rounded-xl font-bold flex items-center justify-center text-white min-h-[2.75rem]"
               style={{ height: 48, background: 'var(--accent)', fontSize: '1.3rem' }}
               aria-label="Drop"
             >&#9196;</button>
@@ -354,7 +354,7 @@ export default function App() {
         {state.gameOver && (
           <div className="flex flex-col items-center gap-3 py-3 shrink-0">
             <div className="display-font text-xl font-bold" style={{ color: 'var(--error, #ef4444)' }}>Game Over</div>
-            <button onClick={() => setState(initState)} className="rounded-xl px-6 py-2.5 font-semibold text-white" style={{ background: 'var(--accent)' }}>Play Again</button>
+            <button onClick={() => setState(initState)} className="rounded-xl px-6 py-2.5 font-semibold text-white min-h-[2.75rem]" style={{ background: 'var(--accent)' }}>Play Again</button>
           </div>
         )}
 
