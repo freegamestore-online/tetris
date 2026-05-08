@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { GameShell, GameTopbar, GameAuth } from '@freegamestore/games'
+import { GameShell, GameTopbar, GameAuth, useGameSounds } from '@freegamestore/games'
 import { useLeaderboard } from './hooks/useLeaderboard'
 
 const COLS = 10
@@ -87,6 +87,9 @@ export default function App() {
   stateRef.current = state
   const { submitScore } = useLeaderboard("tetris")
   const submittedRef = useRef(false)
+  const sounds = useGameSounds()
+  const prevLinesRef = useRef(0)
+  const prevLevelRef = useRef(1)
 
   const spawnPiece = useCallback((board: Board): Partial<GameState> | null => {
     const p = randomPiece()
@@ -118,11 +121,13 @@ export default function App() {
   const move = useCallback((dc: number) => {
     setState(s => {
       if (s.gameOver || s.paused) return s
-      if (!collides(s.board, s.shape, s.pos.row, s.pos.col + dc))
+      if (!collides(s.board, s.shape, s.pos.row, s.pos.col + dc)) {
+        sounds.playMove()
         return { ...s, pos: { ...s.pos, col: s.pos.col + dc } }
+      }
       return s
     })
-  }, [])
+  }, [sounds])
 
   const rotatePiece = useCallback(() => {
     setState(s => {
@@ -135,6 +140,7 @@ export default function App() {
   }, [])
 
   const hardDrop = useCallback(() => {
+    sounds.playDrop()
     setState(s => {
       if (s.gameOver || s.paused) return s
       let r = s.pos.row
@@ -145,7 +151,23 @@ export default function App() {
       if (!spawn) return { ...s, board, pos: { ...s.pos, row: r }, score: s.score + (SCORE_TABLE[cleared] ?? 0), lines: s.lines + cleared, gameOver: true }
       return { ...s, board, score: s.score + (SCORE_TABLE[cleared] ?? 0), lines: s.lines + cleared, ...spawn }
     })
-  }, [spawnPiece])
+  }, [spawnPiece, sounds])
+
+  // Sound effects
+  useEffect(() => {
+    const newLevel = Math.floor(state.lines / 10) + 1
+    if (state.lines > prevLinesRef.current) {
+      sounds.playClear()
+    }
+    if (newLevel > prevLevelRef.current) {
+      sounds.playLevelUp()
+    }
+    prevLinesRef.current = state.lines
+    prevLevelRef.current = newLevel
+    if (state.gameOver) {
+      sounds.playGameOver()
+    }
+  }, [state.lines, state.gameOver, sounds])
 
   // Submit score on game over
   useEffect(() => {
