@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { GameShell, GameTopbar } from '@freegamestore/games'
+import { GameShell, GameTopbar, GameAuth } from '@freegamestore/games'
 import { useLeaderboard } from './hooks/useLeaderboard'
 
 const COLS = 10
@@ -201,15 +201,18 @@ export default function App() {
             { label: 'Level', value: Math.floor(state.lines / 10) + 1 },
           ]}
           actions={
-            !state.gameOver ? (
-              <button
-                onClick={() => setState(s => ({ ...s, paused: !s.paused }))}
-                className="rounded-lg px-3 py-1 text-xs"
-                style={{ background: 'var(--panel)', border: '1px solid var(--line)', color: 'var(--muted)' }}
-              >
-                {state.paused ? 'Resume' : 'Pause'}
-              </button>
-            ) : undefined
+            <>
+              {!state.gameOver && (
+                <button
+                  onClick={() => setState(s => ({ ...s, paused: !s.paused }))}
+                  className="rounded-lg px-3 py-1 text-xs"
+                  style={{ background: 'var(--panel)', border: '1px solid var(--line)', color: 'var(--muted)' }}
+                >
+                  {state.paused ? 'Resume' : 'Pause'}
+                </button>
+              )}
+              <GameAuth />
+            </>
           }
         />
       }
