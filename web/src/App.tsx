@@ -243,45 +243,8 @@ export default function App() {
         />
       }
     >
-      {/* Desktop layout */}
-      <div className="hidden sm:flex flex-1 flex-col items-center justify-center gap-4 p-4 h-full">
-        <div
-          className="rounded-xl overflow-hidden"
-          style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, gridTemplateRows: `repeat(${ROWS}, 1fr)`, border: '2px solid var(--line)', background: 'var(--panel)', width: '16rem', aspectRatio: `${COLS}/${ROWS}` }}
-        >
-          {display.flat().map((cell, i) => (
-            <div
-              key={i}
-              style={{
-                background: cell || 'transparent',
-                boxShadow: cell
-                  ? 'inset 0 0 0 1px rgba(255,255,255,0.15)'
-                  : 'inset 0 0 0 1px var(--line)',
-                borderRadius: cell ? '2px' : '0',
-                minWidth: 0,
-                minHeight: 0,
-              }}
-            />
-          ))}
-        </div>
-
-        {state.gameOver ? (
-          <div className="text-center">
-            <div className="display-font text-xl font-bold mb-3" style={{ color: 'var(--error, #ef4444)' }}>Game Over</div>
-            <button onClick={() => setState(initState)} className="rounded-xl px-6 py-2.5 font-semibold text-white min-h-[2.75rem]" style={{ background: 'var(--accent)' }}>Play Again</button>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            <div className="text-[0.7rem]" style={{ color: 'var(--muted)' }}>
-              Arrow keys &middot; Space to drop &middot; P to pause
-            </div>
-          </div>
-        )}
-        {state.paused && !state.gameOver && <div className="display-font text-lg font-bold" style={{ color: 'var(--muted)' }}>Paused</div>}
-      </div>
-
-      {/* Mobile layout */}
-      <div className="flex sm:hidden flex-col h-full min-h-0">
+      {/* Single responsive layout — touch controls always visible */}
+      <div className="flex flex-col h-full min-h-0">
         {/* Board area */}
         <div className="flex flex-1 items-center justify-center px-2 min-h-0">
           <div
