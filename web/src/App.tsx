@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Shell } from './components/Shell'
-import { Leaderboard } from './components/Leaderboard'
+import { GameShell, GameTopbar } from '@freeappstore/games'
 import { useLeaderboard } from './hooks/useLeaderboard'
 
 const COLS = 10
@@ -86,7 +85,7 @@ export default function App() {
   const [state, setState] = useState<GameState>(initState)
   const stateRef = useRef(state)
   stateRef.current = state
-  const { topScores, recentScores, submitScore, loading } = useLeaderboard("tetris")
+  const { submitScore } = useLeaderboard("tetris")
   const submittedRef = useRef(false)
 
   const spawnPiece = useCallback((board: Board): Partial<GameState> | null => {
@@ -192,33 +191,31 @@ export default function App() {
         display[state.pos.row + r]![state.pos.col + c] = state.piece.color
 
   return (
-    <Shell
-      sidebar={
-        <nav className="flex-1 px-4 flex flex-col gap-3 py-4 overflow-auto">
-          <div className="mt-2 border-t" style={{ borderColor: "var(--line)" }}>
-            <div className="text-xs font-semibold px-4 pt-3" style={{ color: "var(--muted)" }}>Leaderboard</div>
-            <Leaderboard topScores={topScores} recentScores={recentScores} loading={loading} />
-          </div>
-        </nav>
+    <GameShell
+      topbar={
+        <GameTopbar
+          title="Tetris"
+          stats={[
+            { label: 'Score', value: state.score, accent: true },
+            { label: 'Lines', value: state.lines },
+            { label: 'Level', value: Math.floor(state.lines / 10) + 1 },
+          ]}
+          actions={
+            !state.gameOver ? (
+              <button
+                onClick={() => setState(s => ({ ...s, paused: !s.paused }))}
+                className="rounded-lg px-3 py-1 text-xs"
+                style={{ background: 'var(--panel)', border: '1px solid var(--line)', color: 'var(--muted)' }}
+              >
+                {state.paused ? 'Resume' : 'Pause'}
+              </button>
+            ) : undefined
+          }
+        />
       }
     >
       {/* Desktop layout */}
-      <div className="hidden sm:flex flex-1 flex-col items-center justify-center gap-4 p-4">
-        <div className="flex gap-6 text-center">
-          <div>
-            <div className="text-[0.65rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Score</div>
-            <div className="display-font text-2xl font-bold" style={{ color: 'var(--ink)' }}>{state.score}</div>
-          </div>
-          <div>
-            <div className="text-[0.65rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Lines</div>
-            <div className="display-font text-2xl font-bold" style={{ color: 'var(--ink)' }}>{state.lines}</div>
-          </div>
-          <div>
-            <div className="text-[0.65rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Level</div>
-            <div className="display-font text-2xl font-bold" style={{ color: 'var(--ink)' }}>{Math.floor(state.lines / 10) + 1}</div>
-          </div>
-        </div>
-
+      <div className="hidden sm:flex flex-1 flex-col items-center justify-center gap-4 p-4 h-full">
         <div
           className="rounded-xl overflow-hidden"
           style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, gridTemplateRows: `repeat(${ROWS}, 1fr)`, border: '2px solid var(--line)', background: 'var(--panel)', width: '16rem', aspectRatio: `${COLS}/${ROWS}` }}
@@ -228,10 +225,6 @@ export default function App() {
               key={i}
               style={{
                 background: cell || 'transparent',
-                // box-shadow: inset gives a visible "border" without
-                // taking layout space, so 10 cells with 1fr each fit
-                // exactly without 1-2px overflow per cell summing up
-                // to 10-20px and breaking the grid on small viewports.
                 boxShadow: cell
                   ? 'inset 0 0 0 1px rgba(255,255,255,0.15)'
                   : 'inset 0 0 0 1px var(--line)',
@@ -258,33 +251,9 @@ export default function App() {
         {state.paused && !state.gameOver && <div className="display-font text-lg font-bold" style={{ color: 'var(--muted)' }}>Paused</div>}
       </div>
 
-      {/* Mobile layout: stacked, controls below the board. Earlier
-          left+board+right layout cropped controls at the viewport
-          edges because the board (height-constrained, aspect 10:20)
-          plus 2×48px controls didn't fit under ~380px wide. */}
-      {/* Fill the <main> set up by Shell — Shell is now 100dvh and
-          <main> is flex-1 with overflow-hidden, so this just claims
-          100% of the available height without re-computing viewport
-          math (which fights with iOS Safari's URL-bar transitions). */}
+      {/* Mobile layout */}
       <div className="flex sm:hidden flex-col h-full min-h-0">
-        {/* Score bar */}
-        <div className="flex justify-center gap-4 py-1 text-center shrink-0">
-          <div>
-            <div className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Score</div>
-            <div className="display-font text-base font-bold" style={{ color: 'var(--ink)' }}>{state.score}</div>
-          </div>
-          <div>
-            <div className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Lines</div>
-            <div className="display-font text-base font-bold" style={{ color: 'var(--ink)' }}>{state.lines}</div>
-          </div>
-          <div>
-            <div className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Level</div>
-            <div className="display-font text-base font-bold" style={{ color: 'var(--ink)' }}>{Math.floor(state.lines / 10) + 1}</div>
-          </div>
-        </div>
-
-        {/* Board area — fills available vertical space, constrained
-            to viewport width via maxWidth: 100%. */}
+        {/* Board area */}
         <div className="flex flex-1 items-center justify-center px-2 min-h-0">
           <div
             className="rounded-xl overflow-hidden"
@@ -294,10 +263,6 @@ export default function App() {
               gridTemplateRows: `repeat(${ROWS}, 1fr)`,
               border: '2px solid var(--line)',
               background: 'var(--panel)',
-              // Anchor on height so the board fills available
-              // vertical space; clamp width via max-width so narrow
-              // viewports (board.height/2 > viewport.width) shrink
-              // both dimensions proportionally instead of overflowing.
               height: '100%',
               maxWidth: '100%',
               aspectRatio: `${COLS}/${ROWS}`,
@@ -320,8 +285,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Controls below the board: 5-column grid fits all on one row
-            even at 320px (5×48 = 240 + gaps). */}
+        {/* Controls below the board */}
         {!state.gameOver && (
           <div className="grid grid-cols-5 gap-1 px-2 pb-1 pt-1 shrink-0">
             <button
@@ -356,17 +320,6 @@ export default function App() {
             >&#9196;</button>
           </div>
         )}
-        {!state.gameOver && (
-          <div className="flex justify-center pb-2 shrink-0">
-            <button
-              onClick={() => setState(s => ({ ...s, paused: !s.paused }))}
-              className="rounded-lg px-3 py-1 text-[0.65rem]"
-              style={{ background: 'var(--panel)', border: '1px solid var(--line)', color: 'var(--muted)' }}
-            >
-              {state.paused ? 'Resume' : 'Pause'}
-            </button>
-          </div>
-        )}
 
         {/* Game over overlay for mobile */}
         {state.gameOver && (
@@ -380,6 +333,6 @@ export default function App() {
           <div className="text-center py-2 display-font text-lg font-bold" style={{ color: 'var(--muted)' }}>Paused</div>
         )}
       </div>
-    </Shell>
+    </GameShell>
   )
 }
