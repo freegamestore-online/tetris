@@ -226,20 +226,10 @@ export default function App() {
               </ul>
             </div>
           }
-          actions={
-            <>
-              {!state.gameOver && (
-                <button
-                  onClick={() => setState(s => ({ ...s, paused: !s.paused }))}
-                  className="rounded-lg px-3 py-1 text-xs min-h-[2.75rem] min-w-[2.75rem]"
-                  style={{ background: 'var(--panel)', border: '1px solid var(--line)', color: 'var(--muted)' }}
-                >
-                  {state.paused ? 'Resume' : 'Pause'}
-                </button>
-              )}
-              <GameAuth />
-            </>
-          }
+          onPlayPause={!state.gameOver ? () => setState(s => ({ ...s, paused: !s.paused })) : undefined}
+          paused={state.paused}
+          onRestart={() => setState(initState)}
+          actions={<GameAuth />}
         />
       }
     >
