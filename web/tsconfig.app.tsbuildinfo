@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/components/leaderboard.tsx","./src/hooks/useleaderboard.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/components/leaderboard.tsx","./src/test/compliance.test.ts","./src/test/setup.ts"],"errors":true,"version":"5.9.3"}
