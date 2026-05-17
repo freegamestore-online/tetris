@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { GameShell, GameTopbar, GameAuth, useGameSounds } from '@freegamestore/games'
-import { useLeaderboard } from './hooks/useLeaderboard'
+import { useLeaderboard } from '@freegamestore/games'
 
 const COLS = 10
 const ROWS = 20
