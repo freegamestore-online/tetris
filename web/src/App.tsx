@@ -311,17 +311,17 @@ export default function App() {
               aria-label="Down"
             >&#8595;</button>
             <button
-              onClick={() => move(1)}
-              className="rounded-xl font-bold flex items-center justify-center min-h-[2.75rem]"
-              style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
-              aria-label="Right"
-            >&#8594;</button>
-            <button
               onClick={hardDrop}
               className="rounded-xl font-bold flex items-center justify-center text-white min-h-[2.75rem]"
               style={{ height: 48, background: 'var(--accent)', fontSize: '1.3rem' }}
               aria-label="Drop"
             >&#9196;</button>
+            <button
+              onClick={() => move(1)}
+              className="rounded-xl font-bold flex items-center justify-center min-h-[2.75rem]"
+              style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
+              aria-label="Right"
+            >&#8594;</button>
           </div>
         )}
 
