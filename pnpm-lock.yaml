@@ -15,8 +15,8 @@ importers:
   web:
     dependencies:
       '@freegamestore/games':
-        specifier: ^0.13.3
-        version: 0.13.3(react@19.2.5)
+        specifier: ^0.14.0
+        version: 0.14.0(react@19.2.5)
       react:
         specifier: ^19
         version: 19.2.5
@@ -812,8 +812,8 @@ packages:
     resolution: {integrity: sha512-bcUcEj/HrAJeAn4yPC+yaR0WkRZ2l45/wPbrOmsMBOgYv4Rhb6payfZAooH8f+oFeHPBuR4P/78cTuDxOd9i+g==}
     engines: {node: '>=22'}
 
-  '@freegamestore/games@0.13.3':
-    resolution: {integrity: sha512-OxvvM37KmL14SQrWjcbO7D5i0TbrcCPwlWLLsCZz52CUWnnVKKsLuqmwFtMY4dDXi+k2W/pL38/Hy/qHJxBMaQ==}
+  '@freegamestore/games@0.14.0':
+    resolution: {integrity: sha512-RBtM4BnozuIVShDx5809aCPltc2ev2wp9jQTSh0lB6VxeLUBPqPtkBAm4Mk45tfgtX+kxdWDwasBy6GRrXfYGg==}
     engines: {node: '>=22'}
     peerDependencies:
       react: ^19.0.0
@@ -3470,7 +3470,7 @@ snapshots:
 
   '@freeappstore/quality@0.1.0': {}
 
-  '@freegamestore/games@0.13.3(react@19.2.5)':
+  '@freegamestore/games@0.14.0(react@19.2.5)':
     dependencies:
       react: 19.2.5
 
