@@ -6,11 +6,7 @@ settings:
 
 importers:
 
-  .:
-    dependencies:
-      '@freeappstore/quality':
-        specifier: ^0.1.0
-        version: 0.1.0
+  .: {}
 
   web:
     dependencies:
@@ -807,10 +803,6 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
-
-  '@freeappstore/quality@0.1.0':
-    resolution: {integrity: sha512-bcUcEj/HrAJeAn4yPC+yaR0WkRZ2l45/wPbrOmsMBOgYv4Rhb6payfZAooH8f+oFeHPBuR4P/78cTuDxOd9i+g==}
-    engines: {node: '>=22'}
 
   '@freegamestore/games@0.14.0':
     resolution: {integrity: sha512-RBtM4BnozuIVShDx5809aCPltc2ev2wp9jQTSh0lB6VxeLUBPqPtkBAm4Mk45tfgtX+kxdWDwasBy6GRrXfYGg==}
@@ -3467,8 +3459,6 @@ snapshots:
     optional: true
 
   '@exodus/bytes@1.15.0': {}
-
-  '@freeappstore/quality@0.1.0': {}
 
   '@freegamestore/games@0.14.0(react@19.2.5)':
     dependencies:

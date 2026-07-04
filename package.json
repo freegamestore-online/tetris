@@ -16,7 +16,5 @@
     "preview": "pnpm --filter @tetris/web preview",
     "typecheck": "pnpm --filter @tetris/web exec tsc -b"
   },
-  "dependencies": {
-    "@freeappstore/quality": "^0.1.0"
-  }
+  "dependencies": {}
 }
