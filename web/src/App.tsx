@@ -6,14 +6,16 @@ const COLS = 10
 const ROWS = 20
 const BASE_TICK = 500
 
+// Original FreeGameStore palette — built from the brand accent (#10b981 / #2563eb)
+// and neutral-friendly hues. Deliberately not the classic guideline colour set.
 const PIECES = [
-  { shape: [[1,1,1,1]], color: '#00bcd4' },
-  { shape: [[1,1],[1,1]], color: '#ffc107' },
-  { shape: [[0,1,0],[1,1,1]], color: '#9c27b0' },
-  { shape: [[1,0,0],[1,1,1]], color: '#2196f3' },
-  { shape: [[0,0,1],[1,1,1]], color: '#ff9800' },
-  { shape: [[0,1,1],[1,1,0]], color: '#4caf50' },
-  { shape: [[1,1,0],[0,1,1]], color: '#f44336' },
+  { shape: [[1,1,1,1]], color: '#2563eb' },
+  { shape: [[1,1],[1,1]], color: '#f59e0b' },
+  { shape: [[0,1,0],[1,1,1]], color: '#8b5cf6' },
+  { shape: [[1,0,0],[1,1,1]], color: '#10b981' },
+  { shape: [[0,0,1],[1,1,1]], color: '#ec4899' },
+  { shape: [[0,1,1],[1,1,0]], color: '#0d9488' },
+  { shape: [[1,1,0],[0,1,1]], color: '#64748b' },
 ]
 
 type Cell = string | null
@@ -216,7 +218,7 @@ export default function App() {
     <GameShell
       topbar={
         <GameTopbar
-          title="Tetris"
+          title="Falling Blocks"
           stats={[
             { label: 'Score', value: state.score, accent: true },
             { label: 'Lines', value: state.lines },
@@ -224,7 +226,7 @@ export default function App() {
           ]}
           rules={
             <div>
-              <h3 style={{marginBottom:'0.5rem',fontWeight:700}}>Tetris</h3>
+              <h3 style={{marginBottom:'0.5rem',fontWeight:700}}>Falling Blocks</h3>
               <p>Stack falling blocks and clear complete lines.</p>
               <h4 style={{marginTop:'0.75rem',fontWeight:600}}>Controls</h4>
               <ul style={{paddingLeft:'1.2rem',marginTop:'0.25rem'}}>
