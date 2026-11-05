@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   COLS, ROWS, SHAPES, LOCK_DELAY, MAX_LOCK_RESETS, PIECE_COUNT, type GameState,
   advance, bag, clearLines, collides, emptyBoard, gravityMs, hardDrop, holdPiece, initState, lock, merge, move, rotate,
-  shapeOf, softDrop, spawnPos,
+  shapeOf, softDrop, spawnPos, boardView, COLORS,
 } from './game'
 
 const I = 0, O = 1, T = 2, J = 3
@@ -283,5 +283,23 @@ describe('spawn', () => {
     expect(spawnPos(I)).toEqual({ row: -1, col: 3 })
     expect(spawnPos(O)).toEqual({ row: 0, col: 4 })
     expect(spawnPos(T)).toEqual({ row: 0, col: 3 })
+  })
+})
+
+describe('boardView', () => {
+  it('draws the piece over the settled blocks and its ghost on the floor', () => {
+    const s = stateWith(O, { row: 0, col: 4 })
+    const { cells: view, ghost } = boardView(s)
+    expect(view).toHaveLength(ROWS * COLS)
+    expect(view[0 * COLS + 4]).toBe(COLORS[O])
+    expect(view[1 * COLS + 5]).toBe(COLORS[O])
+    expect([...ghost].sort((a, b) => a - b)).toEqual([18 * COLS + 4, 18 * COLS + 5, 19 * COLS + 4, 19 * COLS + 5])
+  })
+
+  it('leaves out the parts of a piece above the board', () => {
+    const s = stateWith(I, { row: -1, col: 3 })
+    expect(boardView(s).cells.filter(Boolean)).toHaveLength(4)
+    const above = stateWith(I, { row: -2, col: 3 })
+    expect(boardView(above).cells.filter(Boolean)).toHaveLength(0)
   })
 })

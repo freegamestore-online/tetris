@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { GameShell, GameTopbar, GameAuth, GameOverScreen, useGameSounds } from '@freegamestore/games'
 import { useLeaderboard } from '@freegamestore/games'
 import {
-  COLS, ROWS, COLORS, SHAPES, PREVIEW, TIMING_FIELDS, type GameState,
-  initState, levelOf, move, rotate, softDrop, hardDrop, holdPiece, advance, dropRow, shapeOf,
+  COLS, ROWS, COLORS, PREVIEW, TIMING_FIELDS, type GameState,
+  initState, levelOf, move, rotate, softDrop, hardDrop, holdPiece, advance, boardView,
 } from './lib/game'
 import { loadStats, recordGame, saveStats } from './lib/stats'
 import { PadButton } from './components/PadButton'
+import { MiniPiece } from './components/MiniPiece'
 import { useBoardGestures } from './useBoardGestures'
 
 // useGameSounds reads SoundContext, which GameShell provides internally. Called above
@@ -21,23 +22,6 @@ function AudioBridge({ apiRef }: { apiRef: React.MutableRefObject<SoundsApi | nu
 
 /** Width of the hold / next / best column beside the board. */
 const SIDE = 64
-const MINI = 11
-
-/** A small picture of a piece in its spawn orientation, for the hold and next slots. */
-function MiniPiece({ type, dim = false }: { type: number | null; dim?: boolean }) {
-  const shape = type === null ? [] : SHAPES[type][0].filter(r => r.some(Boolean))
-  const used = shape.length ? shape[0].map((_, c) => shape.some(r => r[c])) : []
-  const rows = shape.map(r => r.filter((_, c) => used[c]))
-  return (
-    <div className="flex items-center justify-center" style={{ width: MINI * 4, height: MINI * 2 + 4, opacity: dim ? 0.35 : 1 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${rows[0]?.length ?? 0}, ${MINI}px)`, gridAutoRows: `${MINI}px` }}>
-        {rows.flat().map((v, i) => (
-          <div key={i} style={{ background: v && type !== null ? COLORS[type] : 'transparent', borderRadius: 2, boxShadow: v ? 'inset 0 0 0 1px rgba(255,255,255,0.15)' : undefined }} />
-        ))}
-      </div>
-    </div>
-  )
-}
 
 const Label = ({ children }: { children: string }) => (
   <div className="text-[0.6rem] font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{children}</div>
@@ -130,19 +114,8 @@ export default function App() {
     hold,
   })
 
-  // Render: settled blocks, then the ghost where the piece would land, then the piece.
-  const display: (string | null)[] = state.board.flat()
-  const ghost = new Set<number>()
-  const shape = shapeOf(state)
+  const { cells: display, ghost } = boardView(state)
   const color = COLORS[state.type]
-  const landRow = dropRow(state)
-  for (let r = 0; r < shape.length; r++)
-    for (let c = 0; c < shape[r].length; c++) {
-      if (!shape[r][c]) continue
-      const col = state.pos.col + c
-      if (landRow + r >= 0) ghost.add((landRow + r) * COLS + col)
-      if (state.pos.row + r >= 0) display[(state.pos.row + r) * COLS + col] = color
-    }
 
   return (
     <GameShell

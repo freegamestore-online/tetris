@@ -272,3 +272,22 @@ export function advance(s: GameState, dt: number, rng: () => number = Math.rando
   if (lockMs >= LOCK_DELAY) return lock(next, rng)
   return { ...next, fallMs: 0, lockMs }
 }
+
+/**
+ * What the board shows, cell by cell (row-major): settled blocks with the falling
+ * piece drawn over them, and the cells of the ghost where the piece would land.
+ */
+export function boardView(s: GameState): { cells: Cell[]; ghost: Set<number> } {
+  const cells = s.board.flat()
+  const ghost = new Set<number>()
+  const shape = shapeOf(s)
+  const landRow = dropRow(s)
+  for (let r = 0; r < shape.length; r++)
+    for (let c = 0; c < shape[r].length; c++) {
+      if (!shape[r][c]) continue
+      const col = s.pos.col + c
+      if (landRow + r >= 0) ghost.add((landRow + r) * COLS + col)
+      if (s.pos.row + r >= 0) cells[(s.pos.row + r) * COLS + col] = COLORS[s.type]
+    }
+  return { cells, ghost }
+}
