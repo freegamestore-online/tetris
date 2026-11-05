@@ -46,6 +46,10 @@ describe("FreeGameStore compliance", () => {
       expect(css).toMatch(/prefers-color-scheme|data-theme/);
     });
 
+    it("has a data-theme dark rule for the SDK theme toggle", () => {
+      expect(css).toMatch(/:root\[data-theme=['"]dark['"]\]\s*\{[^}]*--paper:/);
+    });
+
     it("has overflow hidden on html/body", () => {
       expect(css).toContain("overflow: hidden");
     });

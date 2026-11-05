@@ -26,8 +26,10 @@
   font-family: "Manrope", system-ui, sans-serif;
 }
 
+/* Dark: follows the system, or the SDK theme toggle (which sets data-theme="dark"). */
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --paper: #0f0f0f;
     --bg: var(--paper);
     --ink: #f5f5f5;
@@ -42,6 +44,23 @@
     --warning: #fbbf24;
     --error: #ef4444;
   }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #0f0f0f;
+  --bg: var(--paper);
+  --ink: #f5f5f5;
+  --muted: #9ca3af;
+  --line: #2d2d2d;
+  --line-strong: #404040;
+  --panel: #1a1a1a;
+  --glass: rgba(15, 15, 15, 0.8);
+  --dock: #1a1a1a;
+
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --error: #ef4444;
 }
 
 html { height: 100%; overflow: hidden; }
