@@ -1,186 +1,59 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { GameShell, GameTopbar, GameAuth, useGameSounds } from '@freegamestore/games'
+import { GameShell, GameTopbar, GameAuth, GameOverScreen, useGameSounds } from '@freegamestore/games'
 import { useLeaderboard } from '@freegamestore/games'
+import { COLS, ROWS, COLORS, type GameState, initState, levelOf, move, rotate, step, hardDrop, shapeOf } from './lib/game'
+import { loadStats, recordGame, saveStats } from './lib/stats'
 
-const COLS = 10
-const ROWS = 20
 const BASE_TICK = 500
 
-// Original FreeGameStore palette — built from the brand accent (#10b981 / #2563eb)
-// and neutral-friendly hues. Deliberately not the classic guideline colour set.
-const PIECES = [
-  { shape: [[1,1,1,1]], color: '#2563eb' },
-  { shape: [[1,1],[1,1]], color: '#f59e0b' },
-  { shape: [[0,1,0],[1,1,1]], color: '#8b5cf6' },
-  { shape: [[1,0,0],[1,1,1]], color: '#10b981' },
-  { shape: [[0,0,1],[1,1,1]], color: '#ec4899' },
-  { shape: [[0,1,1],[1,1,0]], color: '#0d9488' },
-  { shape: [[1,1,0],[0,1,1]], color: '#64748b' },
-]
+// useGameSounds reads SoundContext, which GameShell provides internally. Called above
+// <GameShell> it gets the muted default, so this no-render child of GameShell hands the
+// real sounds API to App through a ref.
+type SoundsApi = ReturnType<typeof useGameSounds>
 
-type Cell = string | null
-type Board = Cell[][]
-
-const emptyBoard = (): Board => Array.from({ length: ROWS }, () => Array(COLS).fill(null))
-const randomPiece = () => PIECES[Math.floor(Math.random() * PIECES.length)]
-
-function rotate(shape: number[][]): number[][] {
-  const rows = shape.length, cols = shape[0].length
-  return Array.from({ length: cols }, (_, c) =>
-    Array.from({ length: rows }, (_, r) => shape[rows - 1 - r][c])
-  )
-}
-
-function collides(board: Board, shape: number[][], row: number, col: number): boolean {
-  for (let r = 0; r < shape.length; r++)
-    for (let c = 0; c < shape[r].length; c++)
-      if (shape[r][c]) {
-        const nr = row + r, nc = col + c
-        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || board[nr][nc]) return true
-      }
-  return false
-}
-
-function merge(board: Board, shape: number[][], row: number, col: number, color: string): Board {
-  const b = board.map(r => [...r])
-  for (let r = 0; r < shape.length; r++)
-    for (let c = 0; c < shape[r].length; c++)
-      if (shape[r][c]) b[row + r][col + c] = color
-  return b
-}
-
-function clearLines(board: Board): { board: Board; cleared: number } {
-  const kept = board.filter(row => row.some(cell => !cell))
-  const cleared = ROWS - kept.length
-  const empty: Board = Array.from({ length: cleared }, () => Array(COLS).fill(null))
-  return { board: [...empty, ...kept], cleared }
-}
-
-const SCORE_TABLE = [0, 100, 300, 500, 800]
-
-interface GameState {
-  board: Board
-  piece: typeof PIECES[0]
-  shape: number[][]
-  pos: { row: number; col: number }
-  score: number
-  lines: number
-  gameOver: boolean
-  paused: boolean
-}
-
-function initState(): GameState {
-  const p = randomPiece()
-  return {
-    board: emptyBoard(),
-    piece: p,
-    shape: p.shape,
-    pos: { row: 0, col: Math.floor((COLS - p.shape[0].length) / 2) },
-    score: 0,
-    lines: 0,
-    gameOver: false,
-    paused: false,
-  }
+function AudioBridge({ apiRef }: { apiRef: React.MutableRefObject<SoundsApi | null> }) {
+  apiRef.current = useGameSounds()
+  return null
 }
 
 export default function App() {
   const [state, setState] = useState<GameState>(initState)
+  // The latest state, updated as soon as an action runs, so actions in the same frame
+  // build on each other instead of on the last render.
   const stateRef = useRef(state)
-  stateRef.current = state
   const { submitScore } = useLeaderboard("tetris")
-  const submittedRef = useRef(false)
-  const sounds = useGameSounds()
-  const prevLinesRef = useRef(0)
-  const prevLevelRef = useRef(1)
+  const audioRef = useRef<SoundsApi | null>(null)
+  const [stats, setStats] = useState(loadStats)
 
-  const spawnPiece = useCallback((board: Board): Partial<GameState> | null => {
-    const p = randomPiece()
-    const col = Math.floor((COLS - p.shape[0].length) / 2)
-    if (collides(board, p.shape, 0, col)) return null
-    return { piece: p, shape: p.shape, pos: { row: 0, col } }
-  }, [])
+  const apply = useCallback((action: (s: GameState) => GameState) => {
+    const prev = stateRef.current
+    const next = action(prev)
+    if (next === prev) return
+    stateRef.current = next
+    setState(next)
 
-  const lockAndSpawn = useCallback(() => {
-    setState(s => {
-      const merged = merge(s.board, s.shape, s.pos.row, s.pos.col, s.piece.color)
-      const { board, cleared } = clearLines(merged)
-      const spawn = spawnPiece(board)
-      if (!spawn) return { ...s, board, score: s.score + (SCORE_TABLE[cleared] ?? 0), lines: s.lines + cleared, gameOver: true }
-      return { ...s, board, score: s.score + (SCORE_TABLE[cleared] ?? 0), lines: s.lines + cleared, ...spawn }
-    })
-  }, [spawnPiece])
-
-  const tick = useCallback(() => {
-    const s = stateRef.current
-    if (s.gameOver || s.paused) return
-    if (!collides(s.board, s.shape, s.pos.row + 1, s.pos.col)) {
-      setState(prev => ({ ...prev, pos: { ...prev.pos, row: prev.pos.row + 1 } }))
-    } else {
-      lockAndSpawn()
+    const sounds = audioRef.current
+    if (next.gameOver && !prev.gameOver) {
+      sounds?.playGameOver()
+      submitScore(next.score)
+      setStats(s => recordGame(s, next.score))
+    } else if (next.lines > prev.lines) {
+      sounds?.playClear()
+      if (levelOf(next.lines) > levelOf(prev.lines)) sounds?.playLevelUp()
+    } else if (next.pos.col !== prev.pos.col || next.rot !== prev.rot) {
+      sounds?.playMove()
     }
-  }, [lockAndSpawn])
+  }, [submitScore])
 
-  const move = useCallback((dc: number) => {
-    setState(s => {
-      if (s.gameOver || s.paused) return s
-      if (!collides(s.board, s.shape, s.pos.row, s.pos.col + dc)) {
-        sounds.playMove()
-        return { ...s, pos: { ...s.pos, col: s.pos.col + dc } }
-      }
-      return s
-    })
-  }, [sounds])
+  const tick = useCallback(() => apply(s => step(s)), [apply])
+  const drop = useCallback(() => {
+    if (!stateRef.current.gameOver && !stateRef.current.paused) audioRef.current?.playDrop()
+    apply(s => hardDrop(s))
+  }, [apply])
+  const togglePause = useCallback(() => apply(s => (s.gameOver ? s : { ...s, paused: !s.paused })), [apply])
+  const restart = useCallback(() => apply(() => initState()), [apply])
 
-  const rotatePiece = useCallback(() => {
-    setState(s => {
-      if (s.gameOver || s.paused) return s
-      const rotated = rotate(s.shape)
-      if (!collides(s.board, rotated, s.pos.row, s.pos.col))
-        return { ...s, shape: rotated }
-      return s
-    })
-  }, [])
-
-  const hardDrop = useCallback(() => {
-    sounds.playDrop()
-    setState(s => {
-      if (s.gameOver || s.paused) return s
-      let r = s.pos.row
-      while (!collides(s.board, s.shape, r + 1, s.pos.col)) r++
-      const merged = merge(s.board, s.shape, r, s.pos.col, s.piece.color)
-      const { board, cleared } = clearLines(merged)
-      const spawn = spawnPiece(board)
-      if (!spawn) return { ...s, board, pos: { ...s.pos, row: r }, score: s.score + (SCORE_TABLE[cleared] ?? 0), lines: s.lines + cleared, gameOver: true }
-      return { ...s, board, score: s.score + (SCORE_TABLE[cleared] ?? 0), lines: s.lines + cleared, ...spawn }
-    })
-  }, [spawnPiece, sounds])
-
-  // Sound effects
-  useEffect(() => {
-    const newLevel = Math.floor(state.lines / 10) + 1
-    if (state.lines > prevLinesRef.current) {
-      sounds.playClear()
-    }
-    if (newLevel > prevLevelRef.current) {
-      sounds.playLevelUp()
-    }
-    prevLinesRef.current = state.lines
-    prevLevelRef.current = newLevel
-    if (state.gameOver) {
-      sounds.playGameOver()
-    }
-  }, [state.lines, state.gameOver, sounds])
-
-  // Submit score on game over
-  useEffect(() => {
-    if (state.gameOver && !submittedRef.current) {
-      submittedRef.current = true
-      submitScore(state.score)
-    }
-    if (!state.gameOver) {
-      submittedRef.current = false
-    }
-  }, [state.gameOver, state.score, submitScore])
+  useEffect(() => saveStats(stats), [stats])
 
   // Game loop
   useEffect(() => {
@@ -195,24 +68,25 @@ export default function App() {
     const handler = (e: KeyboardEvent) => {
       if (['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' '].includes(e.key)) e.preventDefault()
       switch (e.key) {
-        case 'ArrowLeft': move(-1); break
-        case 'ArrowRight': move(1); break
+        case 'ArrowLeft': apply(s => move(s, -1)); break
+        case 'ArrowRight': apply(s => move(s, 1)); break
         case 'ArrowDown': tick(); break
-        case 'ArrowUp': rotatePiece(); break
-        case ' ': hardDrop(); break
-        case 'p': case 'P': setState(s => ({ ...s, paused: !s.paused })); break
+        case 'ArrowUp': apply(rotate); break
+        case ' ': drop(); break
+        case 'p': case 'P': togglePause(); break
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [move, tick, rotatePiece, hardDrop])
+  }, [apply, tick, drop, togglePause])
 
   // Render
   const display = state.board.map(r => [...r])
-  for (let r = 0; r < state.shape.length; r++)
-    for (let c = 0; c < (state.shape[r]?.length ?? 0); c++)
-      if (state.shape[r]?.[c] && state.pos.row + r >= 0 && display[state.pos.row + r])
-        display[state.pos.row + r]![state.pos.col + c] = state.piece.color
+  const shape = shapeOf(state)
+  for (let r = 0; r < shape.length; r++)
+    for (let c = 0; c < shape[r].length; c++)
+      if (shape[r][c] && state.pos.row + r >= 0)
+        display[state.pos.row + r][state.pos.col + c] = COLORS[state.type]
 
   return (
     <GameShell
@@ -222,7 +96,7 @@ export default function App() {
           stats={[
             { label: 'Score', value: state.score, accent: true },
             { label: 'Lines', value: state.lines },
-            { label: 'Level', value: Math.floor(state.lines / 10) + 1 },
+            { label: 'Level', value: levelOf(state.lines) },
           ]}
           rules={
             <div>
@@ -250,15 +124,16 @@ export default function App() {
               </ul>
             </div>
           }
-          onPlayPause={!state.gameOver ? () => setState(s => ({ ...s, paused: !s.paused })) : undefined}
+          onPlayPause={!state.gameOver ? togglePause : undefined}
           paused={state.paused}
-          onRestart={() => setState(initState)}
+          onRestart={restart}
           actions={<GameAuth />}
         />
       }
     >
       {/* Single responsive layout — touch controls always visible */}
-      <div className="flex flex-col h-full min-h-0">
+      <AudioBridge apiRef={audioRef} />
+      <div className="relative flex flex-col h-full min-h-0">
         {/* Board area */}
         <div className="flex flex-1 items-center justify-center px-2 min-h-0">
           <div
@@ -295,13 +170,13 @@ export default function App() {
         {!state.gameOver && (
           <div className="grid grid-cols-5 gap-1 px-2 pb-1 pt-1 shrink-0">
             <button
-              onClick={() => move(-1)}
+              onClick={() => apply(s => move(s, -1))}
               className="rounded-xl font-bold flex items-center justify-center min-h-[2.75rem]"
               style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
               aria-label="Left"
             >&#8592;</button>
             <button
-              onClick={rotatePiece}
+              onClick={() => apply(rotate)}
               className="rounded-xl font-bold flex items-center justify-center min-h-[2.75rem]"
               style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.3rem' }}
               aria-label="Rotate"
@@ -313,13 +188,13 @@ export default function App() {
               aria-label="Down"
             >&#8595;</button>
             <button
-              onClick={hardDrop}
+              onClick={drop}
               className="rounded-xl font-bold flex items-center justify-center text-white min-h-[2.75rem]"
               style={{ height: 48, background: 'var(--accent)', fontSize: '1.3rem' }}
               aria-label="Drop"
             >&#9196;</button>
             <button
-              onClick={() => move(1)}
+              onClick={() => apply(s => move(s, 1))}
               className="rounded-xl font-bold flex items-center justify-center min-h-[2.75rem]"
               style={{ height: 48, background: 'var(--glass)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '1.2rem' }}
               aria-label="Right"
@@ -327,12 +202,10 @@ export default function App() {
           </div>
         )}
 
-        {/* Game over overlay for mobile */}
         {state.gameOver && (
-          <div className="flex flex-col items-center gap-3 py-3 shrink-0">
-            <div className="display-font text-xl font-bold" style={{ color: 'var(--error, #ef4444)' }}>Game Over</div>
-            <button onClick={() => setState(initState)} className="rounded-xl px-6 py-2.5 font-semibold text-white min-h-[2.75rem]" style={{ background: 'var(--accent)' }}>Play Again</button>
-          </div>
+          <GameOverScreen score={state.score} highScore={stats.bestScore} onPlayAgain={restart}>
+            {state.lines} lines · level {levelOf(state.lines)}
+          </GameOverScreen>
         )}
 
         {state.paused && !state.gameOver && (

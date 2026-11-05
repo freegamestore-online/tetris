@@ -25,6 +25,7 @@ vi.mock("@freegamestore/games", async () => {
     GameTopbar: ({ title, rules }: { title: string; rules?: React.ReactNode }) =>
       React.createElement("header", null, React.createElement("h1", null, title), rules),
     GameAuth: () => null,
+    GameOverScreen: () => null,
     useGameSounds: () => sdkStubs.sounds,
     useLeaderboard: () => sdkStubs.leaderboard,
   };
